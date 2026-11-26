@@ -43,6 +43,7 @@ jobs:
         continue-on-error: true
         shell: pwsh
         run: |
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $report = "$env:RUNNER_TEMP\nethelp-uitest.txt"
           Start-Process -FilePath .\NetHelp.exe -ArgumentList '--uitest', $report -Wait
           Get-Content $report -Encoding UTF8 |
