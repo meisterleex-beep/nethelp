@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Получение исходников
+        uses: actions/checkout@v4
+
+      - name: Сборка NetHelp.exe
+        shell: cmd
+        run: build.cmd
+
+      - name: Проверка сборки
+        shell: pwsh
+        run: |
+          if (-not (Test-Path NetHelp.exe)) { throw "NetHelp.exe не собран" }
+          $exe = Get-Item NetHelp.exe
+          Write-Host ("Собран {0} — {1} байт" -f $exe.Name, $exe.Length)
+
+          # Утилита должна запускаться и собирать сведения об адаптерах
+          .\NetHelp.exe --dump "$env:RUNNER_TEMP\nethelp-dump.txt"
+          $dump = Get-Content "$env:RUNNER_TEMP\nethelp-dump.txt" -Raw -Encoding UTF8
+          if ($dump.Length -lt 500) { throw "Утилита не собрала сведения об адаптерах" }
+          Write-Host ("Сведения собраны: {0} символов" -f $dump.Length)
+
+      - name: Проверка вёрстки интерфейса (не блокирует сборку)
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          .\NetHelp.exe --uitest "$env:RUNNER_TEMP\nethelp-uitest.txt"
+          Get-Content "$env:RUNNER_TEMP\nethelp-uitest.txt" -Encoding UTF8 |
+            Select-String -Pattern 'Всего замечаний|НЕ ХВАТАЕТ|ПЕРЕКРЫТИЕ|ЗАКРЫТ|ВЫХОДИТ'
+
+      - name: Артефакт сборки
+        uses: actions/upload-artifact@v4
+        with:
+          name: NetHelp-exe
+          path: NetHelp.exe
+
+      # Публикация выполняется только по тегу вида v1.2.3; повторный запуск не ломается
+      - name: Публикация релиза по тегу
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Релиз $tag уже есть — обновляю вложение NetHelp.exe"
+            gh release upload $tag NetHelp.exe --clobber
+          } else {
+            Write-Host "Создаю релиз $tag"
+            gh release create $tag NetHelp.exe --title "NetHelp $tag" --notes-file docs/release-notes.md
+          }
