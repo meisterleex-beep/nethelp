@@ -15,11 +15,17 @@ namespace NetHelp
     {
         public static string Run()
         {
-            return Run(null);
+            return Run(null, false);
         }
 
         /// <summary>Проверка вёрстки. Если задан photosDir — сохраняет снимок каждой вкладки в PNG.</summary>
         public static string Run(string photosDir)
+        {
+            return Run(photosDir, false);
+        }
+
+        /// <summary>demoData — заполнить интерфейс вымышленными данными (для снимков в документации).</summary>
+        public static string Run(string photosDir, bool demoData)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Проверка вёрстки интерфейса NetHelp");
@@ -27,6 +33,7 @@ namespace NetHelp
             sb.AppendLine();
 
             MainForm f = new MainForm();
+            if (demoData) f.LoadDemoContent();
             f.StartPosition = FormStartPosition.Manual;
             f.Location = new Point(-32000, -32000); // за пределами экрана, но с реальной разметкой
             f.ShowInTaskbar = false;
@@ -216,13 +223,21 @@ namespace NetHelp
             return DeepHit(child, screenPoint);
         }
 
+        /// <summary>Латинские имена файлов снимков — чтобы ссылки в README были без процентов и кириллицы.</summary>
+        private static readonly string[] PhotoSlugs = new string[]
+        {
+            "adapters", "ip-dns", "reset", "ping", "traceroute", "tools", "journal"
+        };
+
         /// <summary>Снимок текущей вкладки средствами самой формы (без снимков экрана).</summary>
         private static void SavePhoto(Form f, int index, string title, string dir, StringBuilder sb)
         {
             try
             {
                 System.IO.Directory.CreateDirectory(dir);
-                string safe = title.Replace("/", "-").Replace("\\", "-").Replace(":", "").Trim();
+                string safe = (index >= 0 && index < PhotoSlugs.Length)
+                    ? PhotoSlugs[index]
+                    : title.Replace("/", "-").Replace("\\", "-").Replace(":", "").Trim();
                 string file = System.IO.Path.Combine(dir, (index + 1).ToString("00") + "-" + safe + ".png");
                 using (Bitmap bmp = new Bitmap(f.Width, f.Height))
                 {

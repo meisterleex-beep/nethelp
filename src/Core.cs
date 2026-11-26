@@ -13,6 +13,9 @@ namespace NetHelp
     /// <summary>Общее состояние приложения, связь между вкладками и журнал действий.</summary>
     public class Core
     {
+        /// <summary>Режим демонстрации: интерфейс показывает вымышленные данные (для снимков и документации).</summary>
+        public static bool DemoMode = false;
+
         public AppSettings Settings;
         public List<AdapterInfo> Adapters = new List<AdapterInfo>();
         public AdapterInfo Selected;
@@ -27,7 +30,8 @@ namespace NetHelp
 
         public Core()
         {
-            Settings = AppSettings.Load();
+            Settings = DemoMode ? AppSettings.Defaults() : AppSettings.Load();
+            if (DemoMode) Adapters = Demo.Adapters();
         }
 
         public void Log(string kind, string text)
@@ -37,7 +41,7 @@ namespace NetHelp
                 try { JournalEntry(kind, text, DateTime.Now.ToString("HH:mm:ss")); }
                 catch { }
             }
-            if (kind == "cmd" || kind == "err")
+            if (!DemoMode && (kind == "cmd" || kind == "err"))
             {
                 try
                 {
@@ -57,6 +61,12 @@ namespace NetHelp
 
         public Task ReloadAsync()
         {
+            if (DemoMode)
+            {
+                // В режиме демонстрации реальные данные не собираются.
+                if (InventoryChanged != null) InventoryChanged(this, EventArgs.Empty);
+                return Task.Factory.StartNew(delegate { });
+            }
             Busy = true;
             return Task.Factory.StartNew(delegate
             {

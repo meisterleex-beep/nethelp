@@ -19,6 +19,7 @@ namespace NetHelp
             bool dump = false;
             bool full = false;
             bool uiTest = false;
+            bool demoData = false;
             string outFile = null;
             string photosDir = null;
             for (int i = 0; i < args.Length; i++)
@@ -27,16 +28,24 @@ namespace NetHelp
                 if (a == "--dump" || a == "/dump" || a == "-d") dump = true;
                 else if (a == "--report" || a == "-r") { dump = true; full = true; }
                 else if (a == "--uitest" || a == "/uitest") { uiTest = true; dump = true; full = false; }
-                else if ((a == "--photos" || a == "--shots") && i + 1 < args.Length) photosDir = args[++i];
+                else if (a == "--demo" || a == "/demo") { demoData = true; uiTest = true; }
+                else if ((a == "--photos" || a == "--shots") && i + 1 < args.Length)
+                {
+                    photosDir = args[++i];
+                    uiTest = true;
+                    if (a == "--shots") demoData = true; // снимки для документации — только на вымышленных данных
+                }
                 else if (a == "--out" && i + 1 < args.Length) outFile = args[++i];
                 else if (!a.StartsWith("-") && outFile == null && (a.EndsWith(".txt") || a.EndsWith(".log"))) outFile = args[i];
             }
+
+            if (demoData) Core.DemoMode = true;
 
             if (uiTest)
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                string text = UiAudit.Run(photosDir);
+                string text = UiAudit.Run(photosDir, demoData);
                 return WriteText(outFile, text) ? 0 : 2;
             }
 

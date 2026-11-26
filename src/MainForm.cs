@@ -8,7 +8,7 @@ namespace NetHelp
 {
     public class MainForm : Form
     {
-        public const string Version = "1.0";
+        public const string Version = "1.1";
 
         private Core _core = new Core();
         private TabControl _tabs;
@@ -130,6 +130,25 @@ namespace NetHelp
             {
                 _core.Log("info", "Программа запущена без прав администратора — доступен только просмотр. Для сброса сети перезапустите с правами администратора.");
             }
+        }
+
+        /// <summary>Заполняет интерфейс демонстрационными данными (режимы --shots и --demo).</summary>
+        public void LoadDemoContent()
+        {
+            Text = "NetHelp " + Version + " — демонстрация интерфейса (данные вымышленные)";
+            _stData.Text = "Данные: D:\\NetHelp (портативно)";
+            _stAdmin.Text = "Права: администратор";
+            _stAdmin.ForeColor = Ui.OkColor;
+            _tabPing.LoadDemo();
+            _tabTrace.LoadDemo();
+            _core.Log("info", "NetHelp " + Version + " — режим демонстрации: все адреса и имена вымышленные");
+            _core.Log("cmd", "> netsh winsock reset");
+            _core.Log("ok", "код возврата: 0   (0,3 с)");
+            _core.Log("cmd", "> netsh int ip reset \"C:\\Users\\user\\AppData\\Local\\Temp\\nethelp-ipreset.log\"");
+            _core.Log("ok", "код возврата: 0   (1,2 с)");
+            _core.Log("cmd", "> ipconfig /flushdns");
+            _core.Log("ok", "код возврата: 0   (0,1 с)");
+            _core.Log("info", "=== Полный сброс сети: завершено ===");
         }
 
         private void AddPage(string title, string tooltip, UserControl c)

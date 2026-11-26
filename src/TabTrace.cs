@@ -134,6 +134,44 @@ namespace NetHelp
             Controls.Add(top);
         }
 
+        /// <summary>Демонстрационная трассировка для снимков интерфейса (реальная сеть не опрашивается).</summary>
+        public void LoadDemo()
+        {
+            _host.Text = "example.com";
+            _grid.Rows.Clear();
+            DemoHop(1, "192.168.1.1", "gw.example.local", 2, 3, 2, "промежуточный узел");
+            DemoHop(2, "100.64.0.1", "cgn.example.net", 8, 9, 11, "промежуточный узел");
+            DemoHop(3, "", "", -1, -1, -1, "нет ответа (превышен таймаут)");
+            DemoHop(4, "203.0.113.9", "core.example.net", 21, 19, 24, "промежуточный узел");
+            DemoHop(5, "198.51.100.7", "peer.example.net", 27, 26, 29, "промежуточный узел");
+            DemoHop(6, "93.184.216.34", "", 29, 30, 28, "узел назначения достигнут");
+
+            Ui.Log(_out, "");
+            Ui.Log(_out, "=== Трассировка до example.com (не более 30 прыжков) ===", Ui.Accent);
+            Ui.Log(_out, "   1  192.168.1.1      gw.example.local                   2        3        2     промежуточный узел");
+            Ui.Log(_out, "   2  100.64.0.1       cgn.example.net                    8        9       11     промежуточный узел");
+            Ui.Log(_out, "   3  *                —                                  *        *        *     нет ответа (превышен таймаут)", Color.FromArgb(150, 150, 155));
+            Ui.Log(_out, "   4  203.0.113.9      core.example.net                  21       19       24     промежуточный узел");
+            Ui.Log(_out, "   5  198.51.100.7     peer.example.net                  27       26       29     промежуточный узел");
+            Ui.Log(_out, "   6  93.184.216.34    (имя не определено)               29       30       28     узел назначения достигнут", Ui.OkColor);
+            Ui.Log(_out, "=== Готово ===", Ui.Accent);
+        }
+
+        private void DemoHop(int ttl, string addr, string name, long t1, long t2, long t3, string status)
+        {
+            int idx = _grid.Rows.Add(new object[]
+            {
+                ttl.ToString(),
+                addr.Length > 0 ? addr : "*",
+                name.Length > 0 ? name : (addr.Length > 0 ? "(имя не определено)" : "—"),
+                t1 >= 0 ? t1.ToString() : "*", t2 >= 0 ? t2.ToString() : "*", t3 >= 0 ? t3.ToString() : "*",
+                status
+            });
+            DataGridViewRow r = _grid.Rows[idx];
+            if (addr.Length == 0) r.DefaultCellStyle.ForeColor = Color.FromArgb(160, 160, 165);
+            else if (status.IndexOf("назначения") >= 0) r.Cells[1].Style.ForeColor = Ui.OkColor;
+        }
+
         private static NumericUpDown Num(int min, int max, int value, int width)
         {
             NumericUpDown n = new NumericUpDown();

@@ -193,6 +193,37 @@ namespace NetHelp
             for (int i = 0; i < core.Settings.PingHosts.Count; i++) _hosts.Items.Add(core.Settings.PingHosts[i]);
         }
 
+        /// <summary>Демонстрационные строки для снимков интерфейса (ничего не пингуется).</summary>
+        public void LoadDemo()
+        {
+            _hosts.Items.Clear();
+            string[] hosts = new string[] { "8.8.8.8", "1.1.1.1", "example.com", "ya.ru" };
+            for (int i = 0; i < hosts.Length; i++) _hosts.Items.Add(hosts[i]);
+            _grid.Rows.Clear();
+            DemoRow("8.8.8.8", "8.8.8.8", 8, 8, 0, 11, 14, 19, 12, 117, "ответ получен");
+            DemoRow("1.1.1.1", "1.1.1.1", 8, 8, 0, 9, 12, 17, 10, 116, "ответ получен");
+            DemoRow("example.com", "93.184.216.34", 8, 7, 12.5, 24, 31, 58, -1, 55, "превышен интервал ожидания");
+            DemoRow("ya.ru", "77.88.55.88", 8, 8, 0, 6, 9, 14, 7, 54, "ответ получен");
+            Ui.Log(_log, "");
+            Ui.Log(_log, "=== Пинг 4 узл(ов), пакетов: 8, таймаут: 2000 мс ===", Ui.Accent);
+            Ui.Log(_log, "  8.8.8.8 — ответ от 8.8.8.8: время=12 мс, TTL=117", Color.FromArgb(180, 220, 180));
+            Ui.Log(_log, "  example.com — превышен интервал ожидания", Color.FromArgb(255, 170, 170));
+            Ui.Log(_log, "=== Пинг завершён ===", Ui.Accent);
+        }
+
+        private void DemoRow(string host, string ip, int sent, int recv, double loss, long min, long avg, long max, long last, int ttl, string status)
+        {
+            int idx = _grid.Rows.Add(new object[]
+            {
+                host, ip, sent.ToString(), recv.ToString(),
+                sent > 0 ? loss.ToString("0") + " %" : "—",
+                min.ToString(), avg.ToString(), max.ToString(),
+                last >= 0 ? last.ToString() : "—", ttl.ToString(), status
+            });
+            DataGridViewRow r = _grid.Rows[idx];
+            r.Cells[10].Style.ForeColor = recv == 0 ? Ui.ErrColor : (loss > 0 ? Ui.WarnColor : Ui.OkColor);
+        }
+
         private static NumericUpDown Num(int min, int max, int value, int width)
         {
             NumericUpDown n = new NumericUpDown();
