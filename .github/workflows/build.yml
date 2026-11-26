@@ -29,18 +29,23 @@ jobs:
           $exe = Get-Item NetHelp.exe
           Write-Host ("Собран {0} — {1} байт" -f $exe.Name, $exe.Length)
 
-          # Утилита должна запускаться и собирать сведения об адаптерах
-          .\NetHelp.exe --dump "$env:RUNNER_TEMP\nethelp-dump.txt"
-          $dump = Get-Content "$env:RUNNER_TEMP\nethelp-dump.txt" -Raw -Encoding UTF8
-          if ($dump.Length -lt 500) { throw "Утилита не собрала сведения об адаптерах" }
-          Write-Host ("Сведения собраны: {0} символов" -f $dump.Length)
+          # PowerShell не ждёт GUI-приложение, поэтому запускаем через Start-Process -Wait
+          $dump = "$env:RUNNER_TEMP\nethelp-dump.txt"
+          $p = Start-Process -FilePath .\NetHelp.exe -ArgumentList '--dump', $dump -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "NetHelp.exe --dump завершился с кодом $($p.ExitCode)" }
+          if (-not (Test-Path $dump)) { throw "Файл отчёта не создан" }
+
+          $text = Get-Content $dump -Raw -Encoding UTF8
+          if ($text.Length -lt 500) { throw "Утилита не собрала сведения об адаптерах" }
+          Write-Host ("Сведения собраны: {0} символов" -f $text.Length)
 
       - name: Проверка вёрстки интерфейса (не блокирует сборку)
         continue-on-error: true
         shell: pwsh
         run: |
-          .\NetHelp.exe --uitest "$env:RUNNER_TEMP\nethelp-uitest.txt"
-          Get-Content "$env:RUNNER_TEMP\nethelp-uitest.txt" -Encoding UTF8 |
+          $report = "$env:RUNNER_TEMP\nethelp-uitest.txt"
+          Start-Process -FilePath .\NetHelp.exe -ArgumentList '--uitest', $report -Wait
+          Get-Content $report -Encoding UTF8 |
             Select-String -Pattern 'Всего замечаний|НЕ ХВАТАЕТ|ПЕРЕКРЫТИЕ|ЗАКРЫТ|ВЫХОДИТ'
 
       - name: Артефакт сборки
