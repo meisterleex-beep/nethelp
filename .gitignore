@@ -1,0 +1,19 @@
+# Результаты сборки
+NetHelp.exe
+*.pdb
+*.user
+
+# Локальные данные портативного режима (появляются при запуске)
+nethelp.cfg
+nethelp-journal.log
+nethelp-errors.log
+reports/
+backup/
+shots/
+
+# Служебные файлы Visual Studio / Windows
+.vs/
+*.suo
+*.userprefs
+Thumbs.db
+desktop.ini

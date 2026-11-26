@@ -1,0 +1,4 @@
+# build.cmd в кодировке CP866 и требует переводов строк CRLF — храним байты как есть
+* text=auto
+*.cmd -text
+*.sln -text
